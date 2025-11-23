@@ -1,3 +1,7 @@
+first apply ./kubectl.exe apply -f cluster-autoscaler/sa.yaml
+
+then
+
 
 helm repo add autoscaler https://kubernetes.github.io/autoscaler && helm repo update
 

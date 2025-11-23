@@ -57,15 +57,3 @@ resource "aws_iam_role_policy_attachment" "cluster_autoscaler_attach" {
 }
 
 
-# Ensure your kubernetes provider is configured to point to the EKS cluster
-
-resource "kubernetes_service_account" "cluster_autoscaler" {
-  metadata {
-    name      = "cluster-autoscaler"
-    namespace = "kube-system"
-
-    annotations = {
-      "eks.amazonaws.com/role-arn" = aws_iam_role.cluster_autoscaler.arn
-    }
-  }
-}
