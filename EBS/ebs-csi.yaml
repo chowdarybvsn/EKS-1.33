@@ -1,0 +1,85 @@
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: ebs-csi-node
+  namespace: kube-system
+  labels:
+    app: ebs-csi-node
+spec:
+  selector:
+    matchLabels:
+      app: ebs-csi-node
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: ebs-csi-node
+    spec:
+      serviceAccountName: ebs-csi-node-sa
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+        - operator: Exists
+      containers:
+        - name: ebs-plugin
+          image: public.ecr.aws/ebs-csi-driver/ebs-csi-driver:v1.51.2
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--endpoint=$(CSI_ENDPOINT)"
+            - "--logging-format=text"
+            - "--metadata-sources=kubernetes"
+          env:
+            - name: CSI_ENDPOINT
+              value: unix:///csi/csi.sock
+            - name: CSI_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: AWS_REGION
+              value: us-east-1
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+            - name: mountpoint-dir
+              mountPath: /var/lib/kubelet
+              mountPropagation: Bidirectional
+        - name: node-driver-registrar
+          image: public.ecr.aws/csi-components/csi-node-driver-registrar:v2.14.0-eksbuild.5
+          args:
+            - "--csi-address=$(ADDRESS)"
+            - "--kubelet-registration-path=/var/lib/kubelet/plugins/ebs.csi.aws.com/csi.sock"
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+            - name: registration-dir
+              mountPath: /var/lib/kubelet/plugins_registry/
+        - name: liveness-probe
+          image: public.ecr.aws/csi-components/livenessprobe:v2.16.0-eksbuild.5
+          args:
+            - "--csi-address=$(ADDRESS)"
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+      volumes:
+        - name: socket-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins/ebs.csi.aws.com/
+            type: DirectoryOrCreate
+        - name: registration-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins_registry/
+            type: Directory
+        - name: mountpoint-dir
+          hostPath:
+            path: /var/lib/kubelet
+            type: Directory

@@ -1,0 +1,12 @@
+
+helm repo add autoscaler https://kubernetes.github.io/autoscaler && helm repo update
+
+helm upgrade --install cluster-autoscaler autoscaler/cluster-autoscaler \
+  --namespace kube-system \
+  --set autoDiscovery.clusterName=eks-133 \
+  --set awsRegion=us-east-1 \
+  --set rbac.serviceAccount.create=false \
+  --set rbac.serviceAccount.name=cluster-autoscaler \
+  --set extraArgs.balance-similar-node-groups=true \
+  --set extraArgs.skip-nodes-with-system-pods=false \
+  --set extraArgs.skip-nodes-with-local-storage=false
