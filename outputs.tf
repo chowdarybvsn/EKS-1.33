@@ -15,5 +15,5 @@ output "oidc_provider_arn" {
 }
 
 output "vpc_id" {
-  value = aws_vpc.this[0].id
+  value = module.vpc.vpc_id
 }
