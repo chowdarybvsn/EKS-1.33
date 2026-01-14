@@ -13,3 +13,7 @@ output "kubeconfig_command" {
 output "oidc_provider_arn" {
   value = module.eks.oidc_provider_arn
 }
+
+output "vpc_id" {
+  value = aws_vpc.this[0].id
+}
